@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="zh" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qwen3-Embedding 服务压测报告</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border-ring:    rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* 0.6B */
+    --series-2:       #eb6834; /* 4B */
+    --seq-light:      #6da7ec; /* p50 */
+    --seq-mid:        #2a78d6; /* p90 */
+    --seq-dark:       #184f95; /* p99 */
+    --status-warning: #fab219;
+    --status-warning-text: #8a5a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border-ring:    rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --seq-light:      #5598e7;
+      --seq-mid:        #3987e5;
+      --seq-dark:       #184f95;
+      --status-warning: #fab219;
+      --status-warning-text: #ffcf6b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border-ring:    rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --seq-light:      #5598e7;
+    --seq-mid:        #3987e5;
+    --seq-dark:       #184f95;
+    --status-warning: #fab219;
+    --status-warning-text: #ffcf6b;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .page { max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+  header.hero h1 { font-size: 24px; font-weight: 650; margin: 0 0 6px; }
+  header.hero p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+  header.hero p.meta { color: var(--text-muted); font-size: 12.5px; margin-top: 8px; }
+
+  .theme-toggle {
+    border: 1px solid var(--border-ring);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .theme-toggle:hover { color: var(--text-primary); }
+
+  section { margin-bottom: 32px; }
+  h2 { font-size: 16px; font-weight: 650; margin: 0 0 4px; }
+  h3 { font-size: 13.5px; font-weight: 600; margin: 0 0 12px; color: var(--text-secondary); }
+  .section-sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 16px; line-height: 1.6; }
+
+  /* stat tiles */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border-ring);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .stat-tile .value { font-size: 22px; font-weight: 650; color: var(--text-primary); font-variant-numeric: proportional-nums; }
+  .stat-tile .unit { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-left: 3px; }
+  .stat-tile .note { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
+  .stat-tile.warn { border-color: rgba(250,178,25,0.45); }
+  .stat-tile.warn .note { color: var(--status-warning-text); display: flex; gap: 5px; align-items: flex-start; }
+  .stat-tile.warn .note svg { flex: none; margin-top: 1px; }
+
+  /* chart card */
+  .chart-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-ring);
+    border-radius: 12px;
+    padding: 18px 20px 14px;
+  }
+  .chart-card .card-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend .item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend .key { width: 18px; height: 2px; border-radius: 1px; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { position: relative; }
+  .panel .panel-title { font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+
+  .chart-wrap { position: relative; }
+  svg.chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .tick-label { fill: var(--text-muted); font-size: 10.5px; }
+  .grid-line { stroke: var(--gridline); stroke-width: 1; }
+  .axis-line { stroke: var(--baseline); stroke-width: 1; }
+  .hit-rect { fill: transparent; }
+  .crosshair { stroke: var(--baseline); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .marker-line { stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.85; pointer-events: none; }
+  .marker-label { font-size: 10px; font-weight: 600; pointer-events: none; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border-ring);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 90ms ease;
+    z-index: 5;
+    min-width: 150px;
+  }
+  .tooltip .t-title { color: var(--text-primary); font-weight: 650; margin-bottom: 5px; font-size: 12px; }
+  .tooltip .t-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .tooltip .t-key { width: 12px; height: 2px; flex: none; }
+  .tooltip .t-val { color: var(--text-primary); font-weight: 650; margin-left: auto; padding-left: 10px; font-variant-numeric: tabular-nums; }
+
+  /* tables */
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.data-table caption { text-align: left; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  table.data-table th, table.data-table td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+  table.data-table th:first-child, table.data-table td:first-child,
+  table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; font-variant-numeric: proportional-nums; }
+  table.data-table thead th { color: var(--text-secondary); font-weight: 600; font-size: 11.5px; text-transform: none; border-bottom: 1px solid var(--baseline); }
+  table.data-table tbody tr:hover { background: var(--page-plane); }
+  .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .table-scroll { overflow-x: auto; }
+
+  .findings { background: var(--surface-1); border: 1px solid var(--border-ring); border-radius: 12px; padding: 20px 22px; }
+  .findings ul { margin: 8px 0 16px; padding-left: 20px; color: var(--text-secondary); font-size: 13.5px; line-height: 1.75; }
+  .findings ul:last-child { margin-bottom: 0; }
+  .findings li strong { color: var(--text-primary); }
+  .findings h3 { margin-top: 4px; }
+
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 4px; }
+  .config-card { border: 1px solid var(--border-ring); border-radius: 10px; padding: 12px 14px; }
+  .config-card .name { font-weight: 650; font-size: 13px; margin-bottom: 8px; }
+  .config-card .row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 3px 0; color: var(--text-secondary); }
+  .config-card .row span:last-child { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  footer { color: var(--text-muted); font-size: 11.5px; text-align: center; padding-top: 12px; border-top: 1px solid var(--gridline); margin-top: 8px; }
+
+  @media (max-width: 760px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .panels, .tables-grid, .config-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div>
+      <h1>Qwen3-Embedding 服务压测报告</h1>
+      <p>对比 Qwen3-Embedding-0.6B (127.0.0.1:8001) 与 Qwen3-Embedding-4B (127.0.0.1:8002) 两个 vLLM OpenAI 兼容 embedding 服务的并发承载能力与延迟特征。</p>
+      <p class="meta">生成日期 2026-09-29 · 压测脚本 bench_embedding.py · 端点 /v1/embeddings</p>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button">切换深色模式</button>
+  </header>
+
+  <section class="stats-row">
+    <div class="stat-tile">
+      <div class="label">0.6B 峰值吞吐</div>
+      <div class="value">222.8<span class="unit">samples/s</span></div>
+      <div class="note">短文本，并发 C=128 时达到</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">4B 峰值吞吐</div>
+      <div class="value">335.9<span class="unit">samples/s</span></div>
+      <div class="note">短文本，并发 C=128 时达到</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">建议支撑并发</div>
+      <div class="value">0.6B ≈128<span class="unit">/ 4B ≈128</span></div>
+      <div class="note">短文本场景，p99 延迟仍可控（&lt;700ms）</div>
+    </div>
+    <div class="stat-tile warn">
+      <div class="label">4B 中等文本吞吐拐点</div>
+      <div class="value">C=32</div>
+      <div class="note">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1.5 15 14.5H1L8 1.5Z" stroke="var(--status-warning)" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.2V9.4" stroke="var(--status-warning)" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.6" r="0.9" fill="var(--status-warning)"/></svg>
+        <span>超过后吞吐从 256→113 req/s，骤降 56%，延迟同步翻倍</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-card">
+    <div class="card-head">
+      <div>
+        <h2>吞吐 vs 并发（短文本，18 字符）</h2>
+        <p class="section-sub" style="margin:2px 0 0;">每个并发档发送 300 次请求，全程 0 报错；两条曲线均在高并发区趋于平顶。</p>
+      </div>
+      <div class="legend" id="legendThroughput"></div>
+    </div>
+    <div class="chart-wrap" id="chartThroughput"></div>
+  </section>
+
+  <section class="chart-card">
+    <div class="card-head">
+      <div>
+        <h2>延迟分位 vs 并发（短文本）</h2>
+        <p class="section-sub" style="margin:2px 0 0;">同一模型内 p50 / p90 / p99 使用同一色相由浅到深表示分位递增，两个模型分别成图，标题即身份。</p>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-title">0.6B — 延迟随并发上升</div>
+        <div class="chart-wrap" id="chartLatency06"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">4B — 延迟随并发上升</div>
+        <div class="chart-wrap" id="chartLatency4b"></div>
+      </div>
+    </div>
+    <div class="legend" id="legendLatency" style="margin-top:14px;"></div>
+  </section>
+
+  <section class="chart-card">
+    <div class="card-head">
+      <div>
+        <h2>文本长度对吞吐的影响（短文本 vs 中等长度文本）</h2>
+        <p class="section-sub" style="margin:2px 0 0;">实线=短文本(18字)，虚线=中等文本(360字)，同色相同模型。4B 面板可见虚线在 C=32 后掉头下降。</p>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-title">0.6B</div>
+        <div class="chart-wrap" id="chartLen06"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">4B</div>
+        <div class="chart-wrap" id="chartLen4b"></div>
+      </div>
+    </div>
+    <div class="legend" id="legendLen" style="margin-top:14px;"></div>
+  </section>
+
+  <section>
+    <h2 style="margin-bottom:4px;">原始压测数据</h2>
+    <p class="section-sub">req/s 为请求速率，samples/s = req/s × batch_size（本次 batch_size=1，两者相等）。</p>
+    <div class="tables-grid">
+      <div class="chart-card table-scroll">
+        <table class="data-table" id="tableShort">
+          <caption>短文本（18 字符）</caption>
+        </table>
+      </div>
+      <div class="chart-card table-scroll">
+        <table class="data-table" id="tableMedium">
+          <caption>中等文本（360 字符）</caption>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="findings">
+    <h2>关键结论</h2>
+    <ul>
+      <li><strong>0.6B 服务</strong>：吞吐随并发持续爬升，在 <strong>C=128</strong> 附近趋于平顶（峰值 222.8 samples/s），继续加并发吞吐不再上升，只是排队变长；全程无 HTTP 错误。</li>
+      <li><strong>4B 服务（短请求）</strong>：可以顶到 <strong>C=128</strong>（335.9 samples/s），短文本下拐点晚于 0.6B。</li>
+      <li><strong>4B 服务（中等长度文本）是关键风险点</strong>：吞吐在 <strong>C=32</strong> 见顶（256 req/s）后不升反降，C=64 时跌至 113 req/s（-56%），p99 延迟从 145ms 直接跳到 598ms。这不是网络或客户端瓶颈，而是 <code>--gpu-memory-utilization 0.5</code> 限制下 KV cache / batch token 预算触顶导致的调度退化。</li>
+      <li><strong>错误率不能作为并发上限的判据</strong>：vLLM 有排队保护，压到 C=256 依然 0 报错；真正该参考的是 <strong>吞吐拐点 + p99 延迟</strong>，而非是否报错。</li>
+      <li><strong>建议</strong>：0.6B 服务并发可放到 ~128；4B 服务若业务输入偏长（几百字以上），建议将并发控制在 <strong>~32</strong>，或调大 <code>M4B_GPU_UTIL</code>（当前 0.5）为 KV cache 争取更多显存以推迟拐点。</li>
+    </ul>
+    <h3>部署配置</h3>
+    <div class="config-grid">
+      <div class="config-card">
+        <div class="name">qwen3-embedding-0.6b</div>
+        <div class="row"><span>GPU</span><span>0</span></div>
+        <div class="row"><span>端口</span><span>8001</span></div>
+        <div class="row"><span>gpu-memory-utilization</span><span>0.25</span></div>
+        <div class="row"><span>max-model-len</span><span>4096</span></div>
+        <div class="row"><span>dtype</span><span>bfloat16</span></div>
+      </div>
+      <div class="config-card">
+        <div class="name">qwen3-embedding-4b</div>
+        <div class="row"><span>GPU</span><span>1</span></div>
+        <div class="row"><span>端口</span><span>8002</span></div>
+        <div class="row"><span>gpu-memory-utilization</span><span>0.5</span></div>
+        <div class="row"><span>max-model-len</span><span>4096</span></div>
+        <div class="row"><span>dtype</span><span>bfloat16</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>由 bench_embedding.py 压测生成 · 每个并发档短文本 300 请求 / 中等文本 200 请求 · 单请求超时 60s</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- data ---------- */
+  var SHORT = {
+    concurrency: [1,2,4,8,16,32,64,128,256],
+    m06: {
+      samples: [77.43,115.18,152.83,176.11,189.35,210.19,216.44,222.81,214.23],
+      req:     [77.43,115.18,152.83,176.11,189.35,210.19,216.44,222.81,214.23],
+      p50: [13.4,16.7,25.9,44.8,84.3,151.9,288.2,529.2,828.8],
+      p90: [13.9,17.9,28.1,51.8,93.2,169.1,323.4,608.0,1228.1],
+      p99: [19.9,23.6,31.1,57.5,110.3,172.2,334.8,671.1,1357.7],
+      err: [0,0,0,0,0,0,0,0,0], total: 300
+    },
+    m4b: {
+      samples: [34.43,60.16,104.93,170.01,244.19,305.41,265.99,335.87,330.88],
+      req:     [34.43,60.16,104.93,170.01,244.19,305.41,265.99,335.87,330.88],
+      p50: [29.1,31.7,32.4,47.9,63.3,99.4,232.4,332.8,751.7],
+      p90: [30.6,37.7,51.5,50.7,67.5,126.1,269.6,452.6,835.2],
+      p99: [34.0,43.7,67.9,64.3,86.9,140.9,289.2,471.2,851.2],
+      err: [0,0,0,0,0,0,0,0,0], total: 300
+    }
+  };
+
+  var MEDIUM = {
+    concurrency: [1,4,16,32,64,128],
+    m06: {
+      samples: [75.50,147.47,191.05,200.75,207.49,209.42],
+      req:     [75.50,147.47,191.05,200.75,207.49,209.42],
+      p50: [13.6,26.4,84.0,158.9,288.8,489.0],
+      p90: [14.3,29.9,91.4,169.4,339.1,686.5],
+      p99: [15.9,35.1,111.7,172.8,346.1,692.8],
+      err: [0,0,0,0,0,0], total: 200
+    },
+    m4b: {
+      samples: [26.88,58.83,146.65,256.04,113.63,113.23],
+      req:     [26.88,58.83,146.65,256.04,113.63,113.23],
+      p50: [35.7,71.7,83.5,117.7,562.5,1096.2],
+      p90: [39.4,85.5,176.1,133.6,583.8,1160.9],
+      p99: [43.8,91.5,201.6,145.0,598.2,1174.6],
+      err: [0,0,0,0,0,0], total: 200
+    }
+  };
+
+  // 短文本在与中等文本相同并发档 [1,4,16,32,64,128] 上的子集，用于"文本长度影响"对比图
+  var SHORT_AT_MEDIUM_C = {
+    m06: { samples: [77.43,152.83,189.35,210.19,216.44,222.81] },
+    m4b: { samples: [34.43,104.93,244.19,305.41,265.99,335.87] }
+  };
+
+  var cssVar = function (name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  };
+
+  /* ---------- small helpers ---------- */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) { n.setAttribute(k, attrs[k]); }
+    return n;
+  }
+  function niceCeil(v) {
+    if (v <= 0) return 1;
+    var mag = Math.pow(10, Math.floor(Math.log10(v)));
+    var norm = v / mag;
+    var step;
+    if (norm <= 1) step = 1;
+    else if (norm <= 2) step = 2;
+    else if (norm <= 5) step = 5;
+    else step = 10;
+    return step * mag;
+  }
+  function fmtNum(v) {
+    if (v >= 1000) return (v / 1000).toFixed(v >= 10000 ? 0 : 1) + "k";
+    if (v >= 100) return v.toFixed(0);
+    return v.toFixed(1);
+  }
+
+  /* ---------- generic line chart renderer ---------- */
+  function renderLineChart(containerId, opts) {
+    var container = document.getElementById(containerId);
+    var width = opts.width || 640, height = opts.height || 260;
+    var padL = 44, padR = 14, padT = 14, padB = 26;
+    var plotW = width - padL - padR, plotH = height - padT - padB;
+
+    var xLabels = opts.xLabels;
+    var series = opts.series; // [{key,label,color,dash,values}]
+    var allVals = [];
+    series.forEach(function (s) { allVals = allVals.concat(s.values); });
+    var yMax = niceCeil(Math.max.apply(null, allVals) * 1.08);
+
+    var svg = el("svg", {
+      class: "chart-svg", viewBox: "0 0 " + width + " " + height,
+      preserveAspectRatio: "xMidYMid meet", role: "img",
+      "aria-label": opts.ariaLabel || ""
+    });
+
+    function xAt(i) { return padL + (xLabels.length === 1 ? 0 : i * (plotW / (xLabels.length - 1))); }
+    function yAt(v) { return padT + plotH * (1 - v / yMax); }
+
+    // gridlines + y ticks
+    var ticks = [0, 0.25, 0.5, 0.75, 1].map(function (f) { return f * yMax; });
+    ticks.forEach(function (t) {
+      var y = yAt(t);
+      svg.appendChild(el("line", { class: "grid-line", x1: padL, x2: width - padR, y1: y, y2: y }));
+      var label = el("text", { class: "tick-label", x: padL - 8, y: y + 3.5, "text-anchor": "end" });
+      label.textContent = fmtNum(t);
+      svg.appendChild(label);
+    });
+    // baseline
+    svg.appendChild(el("line", { class: "axis-line", x1: padL, x2: width - padR, y1: padT + plotH, y2: padT + plotH }));
+
+    // x tick labels
+    xLabels.forEach(function (lab, i) {
+      var t = el("text", { class: "tick-label", x: xAt(i), y: height - 6, "text-anchor": "middle" });
+      t.textContent = lab;
+      svg.appendChild(t);
+    });
+
+    // optional vertical markers (knee points)
+    (opts.markers || []).forEach(function (m) {
+      var x = xAt(m.xIndex);
+      svg.appendChild(el("line", {
+        class: "marker-line", x1: x, x2: x, y1: padT, y2: padT + plotH, stroke: m.color
+      }));
+      var lbl = el("text", { class: "marker-label", x: x + 4, y: padT + 10, fill: m.color });
+      lbl.textContent = m.label;
+      svg.appendChild(lbl);
+    });
+
+    // series paths + end markers
+    series.forEach(function (s) {
+      var d = s.values.map(function (v, i) {
+        return (i === 0 ? "M" : "L") + xAt(i).toFixed(2) + "," + yAt(v).toFixed(2);
+      }).join(" ");
+      var path = el("path", {
+        d: d, fill: "none", stroke: s.color, "stroke-width": 2,
+        "stroke-linejoin": "round", "stroke-linecap": "round"
+      });
+      if (s.dash) path.setAttribute("stroke-dasharray", s.dash);
+      svg.appendChild(path);
+
+      var lastI = s.values.length - 1;
+      svg.appendChild(el("circle", {
+        cx: xAt(lastI), cy: yAt(s.values[lastI]), r: 4.5,
+        fill: s.color, stroke: cssVar("--surface-1"), "stroke-width": 2
+      }));
+    });
+
+    // crosshair
+    var crosshair = el("line", { class: "crosshair", x1: padL, x2: padL, y1: padT, y2: padT + plotH });
+    svg.appendChild(crosshair);
+
+    // hit targets (one band per x index)
+    var band = xLabels.length > 1 ? (plotW / (xLabels.length - 1)) : plotW;
+    xLabels.forEach(function (lab, i) {
+      var x = xAt(i);
+      var rectX = i === 0 ? padL : x - band / 2;
+      var rectW = xLabels.length === 1 ? plotW : band;
+      var hit = el("rect", {
+        class: "hit-rect", x: rectX, y: padT, width: rectW, height: plotH,
+        tabindex: "0", role: "img", "aria-label": lab
+      });
+      hit.addEventListener("pointerenter", function () { showAt(i); });
+      hit.addEventListener("pointermove", function () { showAt(i); });
+      hit.addEventListener("focus", function () { showAt(i); });
+      hit.addEventListener("pointerleave", hideTip);
+      hit.addEventListener("blur", hideTip);
+      svg.appendChild(hit);
+    });
+
+    container.innerHTML = "";
+    var wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.appendChild(svg);
+
+    var tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+    wrap.appendChild(tooltip);
+    container.appendChild(wrap);
+
+    function showAt(i) {
+      var x = xAt(i);
+      crosshair.setAttribute("x1", x); crosshair.setAttribute("x2", x);
+      crosshair.style.opacity = 1;
+
+      tooltip.innerHTML = "";
+      var title = document.createElement("div");
+      title.className = "t-title";
+      title.textContent = (opts.xPrefix || "") + xLabels[i];
+      tooltip.appendChild(title);
+
+      series.forEach(function (s) {
+        var row = document.createElement("div");
+        row.className = "t-row";
+        var key = document.createElement("span");
+        key.className = "t-key";
+        key.style.background = s.color;
+        if (s.dash) { key.style.backgroundImage = "repeating-linear-gradient(90deg," + s.color + " 0 3px, transparent 3px 5px)"; key.style.background = "none"; }
+        row.appendChild(key);
+        var lbl = document.createElement("span");
+        lbl.textContent = s.label;
+        row.appendChild(lbl);
+        var val = document.createElement("span");
+        val.className = "t-val";
+        val.textContent = (opts.yFormat ? opts.yFormat(s.values[i]) : s.values[i]);
+        row.appendChild(val);
+        tooltip.appendChild(row);
+      });
+
+      var pxRatio = (container.clientWidth || width) / width;
+      var leftPx = Math.min(Math.max(x * pxRatio - 70, 0), (container.clientWidth || width) - 160);
+      tooltip.style.left = leftPx + "px";
+      tooltip.style.top = "0px";
+      tooltip.style.opacity = 1;
+    }
+    function hideTip() {
+      crosshair.style.opacity = 0;
+      tooltip.style.opacity = 0;
+    }
+  }
+
+  function renderLegend(containerId, items) {
+    var c = document.getElementById(containerId);
+    c.innerHTML = "";
+    items.forEach(function (it) {
+      var wrap = document.createElement("div");
+      wrap.className = "item";
+      var key = document.createElement("span");
+      key.className = "key";
+      key.style.background = it.dash ? "none" : it.color;
+      if (it.dash) {
+        key.style.backgroundImage = "repeating-linear-gradient(90deg," + it.color + " 0 3px, transparent 3px 5px)";
+      }
+      wrap.appendChild(key);
+      var label = document.createElement("span");
+      label.textContent = it.label;
+      wrap.appendChild(label);
+      c.appendChild(wrap);
+    });
+  }
+
+  /* ---------- build tables ---------- */
+  function buildTable(tableId, conc, m06, m4b, total) {
+    var table = document.getElementById(tableId);
+    var thead = document.createElement("thead");
+    var headRow = document.createElement("tr");
+    ["并发", "模型", "req/s", "p50(ms)", "p90(ms)", "p99(ms)", "max(ms)", "错误率"].forEach(function (h) {
+      var th = document.createElement("th");
+      th.textContent = h;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    conc.forEach(function (c, i) {
+      [["0.6B", m06], ["4B", m4b]].forEach(function (pair) {
+        var name = pair[0], m = pair[1];
+        var tr = document.createElement("tr");
+        var cells = [
+          c, name, m.req[i].toFixed(2),
+          m.p50[i].toFixed(1), m.p90[i].toFixed(1), m.p99[i].toFixed(1), m.max[i].toFixed(1),
+          (m.err[i] / total * 100).toFixed(1) + "%"
+        ];
+        cells.forEach(function (val, ci) {
+          var td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    });
+    table.appendChild(tbody);
+  }
+
+  // max latency arrays (kept separate to avoid bloating series objects above)
+  SHORT.m06.max = [24.5,28.6,32.9,60.6,123.9,186.6,336.0,672.2,1368.9];
+  SHORT.m4b.max = [39.8,47.4,68.8,66.5,89.0,142.7,291.6,474.2,853.1];
+  MEDIUM.m06.max = [18.5,41.2,115.8,195.0,346.6,693.8];
+  MEDIUM.m4b.max = [61.9,92.4,202.4,146.2,602.3,1178.1];
+
+  /* ---------- render everything ---------- */
+  function build() {
+    var c1 = cssVar("--series-1"), c2 = cssVar("--series-2");
+
+    renderLegend("legendThroughput", [
+      { color: c1, label: "0.6B" },
+      { color: c2, label: "4B" }
+    ]);
+    renderLineChart("chartThroughput", {
+      xLabels: SHORT.concurrency.map(String),
+      xPrefix: "并发 C=",
+      yFormat: function (v) { return v.toFixed(1) + " samples/s"; },
+      ariaLabel: "吞吐 vs 并发，短文本",
+      series: [
+        { key: "m06", label: "0.6B", color: c1, values: SHORT.m06.samples },
+        { key: "m4b", label: "4B", color: c2, values: SHORT.m4b.samples }
+      ]
+    });
+
+    var seqLight = cssVar("--seq-light"), seqMid = cssVar("--seq-mid"), seqDark = cssVar("--seq-dark");
+    renderLegend("legendLatency", [
+      { color: seqLight, label: "p50" },
+      { color: seqMid, label: "p90" },
+      { color: seqDark, label: "p99" }
+    ]);
+    renderLineChart("chartLatency06", {
+      xLabels: SHORT.concurrency.map(String), xPrefix: "并发 C=",
+      yFormat: function (v) { return v.toFixed(1) + " ms"; },
+      ariaLabel: "0.6B 延迟分位 vs 并发",
+      series: [
+        { key: "p50", label: "p50", color: seqLight, values: SHORT.m06.p50 },
+        { key: "p90", label: "p90", color: seqMid, values: SHORT.m06.p90 },
+        { key: "p99", label: "p99", color: seqDark, values: SHORT.m06.p99 }
+      ]
+    });
+    renderLineChart("chartLatency4b", {
+      xLabels: SHORT.concurrency.map(String), xPrefix: "并发 C=",
+      yFormat: function (v) { return v.toFixed(1) + " ms"; },
+      ariaLabel: "4B 延迟分位 vs 并发",
+      series: [
+        { key: "p50", label: "p50", color: seqLight, values: SHORT.m4b.p50 },
+        { key: "p90", label: "p90", color: seqMid, values: SHORT.m4b.p90 },
+        { key: "p99", label: "p99", color: seqDark, values: SHORT.m4b.p99 }
+      ]
+    });
+
+    renderLegend("legendLen", [
+      { color: c1, label: "0.6B · 短文本" },
+      { color: c1, label: "0.6B · 中等文本", dash: true },
+      { color: c2, label: "4B · 短文本" },
+      { color: c2, label: "4B · 中等文本", dash: true }
+    ]);
+    renderLineChart("chartLen06", {
+      xLabels: MEDIUM.concurrency.map(String), xPrefix: "并发 C=",
+      yFormat: function (v) { return v.toFixed(1) + " samples/s"; },
+      ariaLabel: "0.6B 短文本 vs 中等文本吞吐",
+      series: [
+        { key: "short", label: "短文本", color: c1, values: SHORT_AT_MEDIUM_C.m06.samples },
+        { key: "medium", label: "中等文本", color: c1, dash: "5 4", values: MEDIUM.m06.samples }
+      ]
+    });
+    renderLineChart("chartLen4b", {
+      xLabels: MEDIUM.concurrency.map(String), xPrefix: "并发 C=",
+      yFormat: function (v) { return v.toFixed(1) + " samples/s"; },
+      ariaLabel: "4B 短文本 vs 中等文本吞吐，中等文本在 C=32 后下降",
+      markers: [{ xIndex: 3, label: "拐点 C=32", color: cssVar("--status-warning") }],
+      series: [
+        { key: "short", label: "短文本", color: c2, values: SHORT_AT_MEDIUM_C.m4b.samples },
+        { key: "medium", label: "中等文本", color: c2, dash: "5 4", values: MEDIUM.m4b.samples }
+      ]
+    });
+
+    buildTable("tableShort", SHORT.concurrency, SHORT.m06, SHORT.m4b, 300);
+    buildTable("tableMedium", MEDIUM.concurrency, MEDIUM.m06, MEDIUM.m4b, 200);
+  }
+
+  build();
+  window.addEventListener("resize", function () {
+    // SVGs are viewBox-scaled; only re-run on major breakpoint changes needed rarely.
+  });
+
+  /* ---------- theme toggle ---------- */
+  var btn = document.getElementById("themeToggle");
+  btn.addEventListener("click", function () {
+    var root = document.documentElement;
+    var cur = root.getAttribute("data-theme");
+    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+    build();
+  });
+})();
+</script>
+</body>
+</html>
