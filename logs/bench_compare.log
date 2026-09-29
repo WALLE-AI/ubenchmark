@@ -1,0 +1,444 @@
+[2026-09-29 16:51:08] >>> [pd] concurrency=1 port=19121
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=1, output_file='./bench_results/pd_c1.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19121/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=1, output_file='./bench_results/pd_c1.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 1         
+Successful requests:                     40        
+Benchmark duration (s):                  290.05    
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    9939      
+Request throughput (req/s):              0.14      
+Input token throughput (tok/s):          141.22    
+Output token throughput (tok/s):         35.30     
+Peak output token throughput (tok/s):    48.00     
+Peak concurrent requests:                2         
+Total token throughput (tok/s):          176.52    
+Concurrency:                             1.00      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   7250.28   
+Median E2E Latency (ms):                 7148.61   
+P90 E2E Latency (ms):                    7236.74   
+P99 E2E Latency (ms):                    10181.90  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          512.91    
+Median TTFT (ms):                        459.84    
+P99 TTFT (ms):                           3459.56   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          26.42     
+Median TPOT (ms):                        26.49     
+P99 TPOT (ms):                           26.72     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           26.42     
+Median ITL (ms):                         26.46     
+P95 ITL (ms):                            26.82     
+P99 ITL (ms):                            28.12     
+Max ITL (ms):                            338.70    
+==================================================
+[2026-09-29 16:56:08] >>> [gpu2] concurrency=1 port=19122
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=1, output_file='./bench_results/gpu2_c1.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19122/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=1, output_file='./bench_results/gpu2_c1.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 1         
+Successful requests:                     40        
+Benchmark duration (s):                  255.65    
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    9941      
+Request throughput (req/s):              0.16      
+Input token throughput (tok/s):          160.22    
+Output token throughput (tok/s):         40.05     
+Peak output token throughput (tok/s):    42.00     
+Peak concurrent requests:                2         
+Total token throughput (tok/s):          200.27    
+Concurrency:                             1.00      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   6390.24   
+Median E2E Latency (ms):                 6370.77   
+P90 E2E Latency (ms):                    6391.58   
+P99 E2E Latency (ms):                    6711.02   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          196.64    
+Median TTFT (ms):                        178.31    
+P99 TTFT (ms):                           515.89    
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          24.29     
+Median TPOT (ms):                        24.29     
+P99 TPOT (ms):                           24.34     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           24.29     
+Median ITL (ms):                         24.27     
+P95 ITL (ms):                            24.45     
+P99 ITL (ms):                            24.79     
+Max ITL (ms):                            28.52     
+==================================================
+[2026-09-29 17:00:34] >>> [pd] concurrency=4 port=19121
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file='./bench_results/pd_c4.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19121/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file='./bench_results/pd_c4.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 4         
+Successful requests:                     40        
+Benchmark duration (s):                  75.05     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    10144     
+Request throughput (req/s):              0.53      
+Input token throughput (tok/s):          545.76    
+Output token throughput (tok/s):         136.44    
+Peak output token throughput (tok/s):    158.00    
+Peak concurrent requests:                8         
+Total token throughput (tok/s):          682.20    
+Concurrency:                             3.99      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   7478.41   
+Median E2E Latency (ms):                 7396.58   
+P90 E2E Latency (ms):                    7984.13   
+P99 E2E Latency (ms):                    8256.09   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          516.75    
+Median TTFT (ms):                        394.31    
+P99 TTFT (ms):                           1531.78   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          27.30     
+Median TPOT (ms):                        27.49     
+P99 TPOT (ms):                           28.04     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           27.30     
+Median ITL (ms):                         27.77     
+P95 ITL (ms):                            28.40     
+P99 ITL (ms):                            30.45     
+Max ITL (ms):                            335.65    
+==================================================
+[2026-09-29 17:02:01] >>> [gpu2] concurrency=4 port=19122
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file='./bench_results/gpu2_c4.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19122/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=4, output_file='./bench_results/gpu2_c4.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 4         
+Successful requests:                     40        
+Benchmark duration (s):                  73.69     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    9615      
+Request throughput (req/s):              0.54      
+Input token throughput (tok/s):          555.88    
+Output token throughput (tok/s):         138.97    
+Peak output token throughput (tok/s):    156.00    
+Peak concurrent requests:                8         
+Total token throughput (tok/s):          694.85    
+Concurrency:                             4.00      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   7364.08   
+Median E2E Latency (ms):                 7400.05   
+P90 E2E Latency (ms):                    7409.93   
+P99 E2E Latency (ms):                    7423.12   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          547.83    
+Median TTFT (ms):                        540.95    
+P99 TTFT (ms):                           831.71    
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          26.73     
+Median TPOT (ms):                        26.19     
+P99 TPOT (ms):                           28.37     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           26.73     
+Median ITL (ms):                         25.79     
+P95 ITL (ms):                            26.04     
+P99 ITL (ms):                            27.08     
+Max ITL (ms):                            671.08    
+==================================================
+[2026-09-29 17:03:25] >>> [pd] concurrency=8 port=19121
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='./bench_results/pd_c8.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19121/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='./bench_results/pd_c8.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 8         
+Successful requests:                     40        
+Benchmark duration (s):                  40.05     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    9943      
+Request throughput (req/s):              1.00      
+Input token throughput (tok/s):          1022.66   
+Output token throughput (tok/s):         255.66    
+Peak output token throughput (tok/s):    280.00    
+Peak concurrent requests:                14        
+Total token throughput (tok/s):          1278.32   
+Concurrency:                             7.86      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   7866.04   
+Median E2E Latency (ms):                 7705.04   
+P90 E2E Latency (ms):                    8328.53   
+P99 E2E Latency (ms):                    8943.82   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          522.77    
+Median TTFT (ms):                        348.47    
+P99 TTFT (ms):                           1512.24   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          28.80     
+Median TPOT (ms):                        29.13     
+P99 TPOT (ms):                           29.20     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           28.80     
+Median ITL (ms):                         29.11     
+P95 ITL (ms):                            30.38     
+P99 ITL (ms):                            32.07     
+Max ITL (ms):                            42.62     
+==================================================
+[2026-09-29 17:04:15] >>> [gpu2] concurrency=8 port=19122
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='./bench_results/gpu2_c8.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19122/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=8, output_file='./bench_results/gpu2_c8.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 8         
+Successful requests:                     40        
+Benchmark duration (s):                  41.04     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    9864      
+Request throughput (req/s):              0.97      
+Input token throughput (tok/s):          998.02    
+Output token throughput (tok/s):         249.51    
+Peak output token throughput (tok/s):    303.00    
+Peak concurrent requests:                16        
+Total token throughput (tok/s):          1247.53   
+Concurrency:                             7.99      
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   8199.61   
+Median E2E Latency (ms):                 8280.29   
+P90 E2E Latency (ms):                    8284.42   
+P99 E2E Latency (ms):                    8285.72   
+---------------Time to First Token----------------
+Mean TTFT (ms):                          850.22    
+Median TTFT (ms):                        988.70    
+P99 TTFT (ms):                           1387.58   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          28.82     
+Median TPOT (ms):                        28.59     
+P99 TPOT (ms):                           31.76     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           28.82     
+Median ITL (ms):                         26.97     
+P95 ITL (ms):                            27.22     
+P99 ITL (ms):                            28.10     
+Max ITL (ms):                            1238.68   
+==================================================
+[2026-09-29 17:05:06] >>> [pd] concurrency=16 port=19121
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='./bench_results/pd_c16.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19121/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19121, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='./bench_results/pd_c16.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 16        
+Successful requests:                     40        
+Benchmark duration (s):                  25.28     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    10201     
+Request throughput (req/s):              1.58      
+Input token throughput (tok/s):          1620.17   
+Output token throughput (tok/s):         405.04    
+Peak output token throughput (tok/s):    528.00    
+Peak concurrent requests:                22        
+Total token throughput (tok/s):          2025.21   
+Concurrency:                             13.64     
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   8622.34   
+Median E2E Latency (ms):                 8482.91   
+P90 E2E Latency (ms):                    9861.15   
+P99 E2E Latency (ms):                    10531.35  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1057.19   
+Median TTFT (ms):                        934.93    
+P99 TTFT (ms):                           2664.02   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          29.67     
+Median TPOT (ms):                        29.70     
+P99 TPOT (ms):                           30.85     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           29.67     
+Median ITL (ms):                         30.52     
+P95 ITL (ms):                            32.61     
+P99 ITL (ms):                            35.66     
+Max ITL (ms):                            46.87     
+==================================================
+[2026-09-29 17:05:41] >>> [gpu2] concurrency=16 port=19122
+benchmark_args=Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='./bench_results/gpu2_c16.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+Waiting up to 60s for http://127.0.0.1:19122/v1/models to become ready...
+Server ready in 0.0s.
+Fail to load tokenizer config with error=We couldn't connect to 'https://huggingface.co' to load the files, and couldn't find them in the cached files.
+Check your internet connection or see how to run the library in offline mode at 'https://huggingface.co/docs/transformers/installation#offline-mode'.
+
+WARNING It is recommended to use the `Chat` or `Instruct` model for benchmarking.
+Because when the tokenizer counts the output tokens, if there is gibberish, it might count incorrectly.
+
+Namespace(backend='sglang', base_url=None, host='127.0.0.1', port=19122, ready_check_timeout_sec=60, dataset_name='random-ids', dataset_path='', model='Qwen3.8-27B', served_model_name=None, tokenizer='/home/dataset0/images/Qwen3.8-27B', num_prompts=40, sharegpt_output_len=None, sharegpt_context_len=None, random_input_len=1024, random_output_len=256, random_range_ratio=1.0, image_count=1, image_resolution='1080p', random_image_count=False, image_format='jpeg', image_content='random', request_rate=inf, use_trace_timestamps=False, max_concurrency=16, output_file='./bench_results/gpu2_c16.json', output_details=False, print_requests=False, disable_tqdm=True, disable_stream=False, return_logprob=False, top_logprobs_num=0, token_ids_logprob=None, logprob_start_len=-1, return_routed_experts=False, seed=42, disable_ignore_eos=False, extra_request_body=None, apply_chat_template=False, profile=False, plot_throughput=False, profile_activities=['CPU', 'GPU'], profile_start_step=None, profile_steps=None, profile_num_steps=None, profile_by_stage=False, profile_stages=None, profile_output_dir=None, profile_prefix=None, lora_name=None, lora_request_distribution='uniform', lora_zipf_alpha=1.5, prompt_suffix='', pd_separated=False, profile_prefill_url=None, profile_decode_url=None, flush_cache=False, warmup_requests=1, tokenize_prompt=False, gsp_num_groups=64, gsp_prompts_per_group=16, gsp_system_prompt_len=2048, gsp_question_len=128, gsp_output_len=256, gsp_range_ratio=1.0, gsp_fast_prepare=False, gsp_send_routing_key=False, gsp_num_turns=1, gsp_ordered=False, mooncake_slowdown_factor=1.0, mooncake_num_rounds=1, mooncake_workload='conversation', tag=None, header=None)
+
+#Input tokens: 40960
+#Output tokens: 10240
+Starting warmup with 1 sequences...
+Warmup completed with 1 sequences. Starting main benchmark run...
+
+============ Serving Benchmark Result ============
+Backend:                                 sglang    
+Traffic request rate:                    inf       
+Max request concurrency:                 16        
+Successful requests:                     40        
+Benchmark duration (s):                  27.67     
+Total input tokens:                      40960     
+Total input text tokens:                 40960     
+Total generated tokens:                  10240     
+Total generated tokens (retokenized):    10210     
+Request throughput (req/s):              1.45      
+Input token throughput (tok/s):          1480.34   
+Output token throughput (tok/s):         370.08    
+Peak output token throughput (tok/s):    525.00    
+Peak concurrent requests:                31        
+Total token throughput (tok/s):          1850.42   
+Concurrency:                             14.12     
+----------------End-to-End Latency----------------
+Mean E2E Latency (ms):                   9769.64   
+Median E2E Latency (ms):                 9470.30   
+P90 E2E Latency (ms):                    9627.78   
+P99 E2E Latency (ms):                    18730.66  
+---------------Time to First Token----------------
+Mean TTFT (ms):                          1685.85   
+Median TTFT (ms):                        1245.63   
+P99 TTFT (ms):                           9705.72   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          31.70     
+Median TPOT (ms):                        31.48     
+P99 TPOT (ms):                           36.89     
+---------------Inter-Token Latency----------------
+Mean ITL (ms):                           31.70     
+Median ITL (ms):                         28.50     
+P95 ITL (ms):                            28.85     
+P99 ITL (ms):                            30.91     
+Max ITL (ms):                            2222.89   
+==================================================
+[2026-09-29 17:06:19] >>> 汇总对比
+concurrency | 方案 | req/s | tok/s(in) | tok/s(out) | TTFT均值ms | TTFT中位ms | TPOT均值ms | TTFT p99 ms
+--- | --- | --- | --- | --- | --- | --- | --- | ---
+1 | PD分离(4卡) | 0.14 | 141.22 | 35.30 | 512.91 | 459.84 | 26.42 | 3459.56
+1 | 单实例(2卡) | 0.16 | 160.22 | 40.05 | 196.64 | 178.31 | 24.29 | 515.89
+4 | PD分离(4卡) | 0.53 | 545.76 | 136.44 | 516.75 | 394.31 | 27.30 | 1531.78
+4 | 单实例(2卡) | 0.54 | 555.88 | 138.97 | 547.83 | 540.95 | 26.73 | 831.71
+8 | PD分离(4卡) | 1.00 | 1022.66 | 255.66 | 522.77 | 348.47 | 28.80 | 1512.24
+8 | 单实例(2卡) | 0.97 | 998.02 | 249.51 | 850.22 | 988.70 | 28.82 | 1387.58
+16 | PD分离(4卡) | 1.58 | 1620.17 | 405.04 | 1057.19 | 934.93 | 29.67 | 2664.02
+16 | 单实例(2卡) | 1.45 | 1480.34 | 370.08 | 1685.85 | 1245.63 | 31.70 | 9705.72
+[2026-09-29 17:06:20] >>> 完成。原始结果见 ./bench_results/*.json
