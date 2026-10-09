@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+
+# vLLM / Triton 运行时缓存
+.triton_cache/
+.vllm_plugins/
+
+# 服务运行时产物
+logs/
+pids/
+
+# TeleOCR 官方仓库，本身是独立 git 仓库，按需自行 clone:
+#   git clone https://github.com/Tele-AI/TeleOCR
+TeleOCR/
+
+# 压测临时产物
+*.png.svg
