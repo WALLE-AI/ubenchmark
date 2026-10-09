@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qwen3.8-27B 部署方案性能对比评测报告</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --series-2:       #eb6834;
+    --good:           #0ca30c;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  header.report-header {
+    margin-bottom: 32px;
+  }
+  header.report-header h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header.report-header .meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  header.report-header .meta b { color: var(--text-primary); }
+
+  section { margin-bottom: 40px; }
+  section > h2 {
+    font-size: 18px;
+    margin: 0 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  section > p.lead {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.75;
+    margin: 0 0 16px;
+  }
+
+  .cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .config-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .config-card h3 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .config-card .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  .config-card ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+  }
+  .config-card ul li b { color: var(--text-primary); font-weight: 600; }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .chart-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px 12px;
+  }
+  .chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--text-primary);
+  }
+  .chart-card h3 .unit {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .chart-area {
+    position: relative;
+    padding-left: 44px;
+    padding-bottom: 22px;
+  }
+  .ticks {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 22px;
+  }
+  .tick {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: 1px solid var(--gridline);
+  }
+  .tick span {
+    position: absolute;
+    left: -44px;
+    top: -7px;
+    width: 38px;
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .bars {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 100%;
+    border-bottom: 1px solid var(--baseline);
+    z-index: 1;
+  }
+  .bar-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    position: relative;
+    padding-bottom: 22px;
+  }
+  .bar {
+    width: 22px;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    cursor: default;
+    transition: opacity 0.15s;
+  }
+  .bar:hover { opacity: 0.82; }
+  .bar-value {
+    position: absolute;
+    top: -18px;
+    font-size: 10.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .bar-axis-label {
+    position: absolute;
+    bottom: -20px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.data-table th, table.data-table td {
+    padding: 9px 10px;
+    text-align: right;
+    border-bottom: 1px solid var(--gridline);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  table.data-table th:nth-child(1), table.data-table td:nth-child(1),
+  table.data-table th:nth-child(2), table.data-table td:nth-child(2) {
+    text-align: left;
+    font-variant-numeric: normal;
+  }
+  table.data-table thead th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 11.5px;
+    background: var(--page-plane);
+  }
+  table.data-table tbody tr:last-child td { border-bottom: none; }
+  table.data-table .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .findings {
+    display: grid;
+    gap: 10px;
+  }
+  .finding {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--series-1);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .finding b { color: var(--text-primary); }
+  .finding.highlight { border-left-color: var(--good); }
+
+  footer.report-footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gridline);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  @media (max-width: 760px) {
+    .cards-row, .charts-grid { grid-template-columns: 1fr; }
+    table.data-table { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root page">
+
+  <header class="report-header">
+    <h1>Qwen3.8-27B 部署方案性能对比评测报告</h1>
+    <div class="meta">
+      测试日期：<b>2026-09-29</b> ｜ 模型：<b>Qwen3.8-27B</b>（Qwen3.5系列，hybrid Mamba架构）　｜　
+      测试工具：<b>sglang.bench_serving</b>（sglang 0.5.10, backend=sglang, 原生 <code class="mono">/generate</code> 接口）<br>
+      对比对象：<b>PD分离部署</b>（4卡：Prefill 2张 + Decode 2张）　vs　<b>单实例部署</b>（2卡，TP=2，sglang_env环境）
+    </div>
+  </header>
+
+  <section id="setup">
+    <h2>一、部署方案</h2>
+    <div class="cards-row">
+      <div class="config-card">
+        <h3><span class="dot" style="background:var(--series-1)"></span>方案A：PD分离（4卡）</h3>
+        <ul>
+          <li>入口：<b>http://127.0.0.1:19121</b>（sglang_router）</li>
+          <li>拓扑：Prefill GPU 2,3（TP=2）+ Decode GPU 4,5（TP=2）</li>
+          <li>KV传输：单节点NVLink（mooncake, INTRA_NODE_NVLINK）</li>
+          <li>上下文长度：65536　｜　chunked-prefill-size：2048</li>
+          <li>并发上限：Prefill 16　｜　Decode 48（受mamba槽位约束）</li>
+        </ul>
+      </div>
+      <div class="config-card">
+        <h3><span class="dot" style="background:var(--series-2)"></span>方案B：单实例（2卡）</h3>
+        <ul>
+          <li>入口：<b>http://127.0.0.1:19122</b>（sglang原生server）</li>
+          <li>拓扑：GPU 0,1（TP=2），Prefill/Decode共用同一实例</li>
+          <li>无KV跨卡传输，无Router转发开销</li>
+          <li>上下文长度：65536　｜　chunked-prefill-size：2048（与方案A对齐）</li>
+          <li>并发上限：协商结果 <b>15</b>（mamba槽位/3，单实例受同一硬约束）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="method">
+    <h2>二、压测方法</h2>
+    <p class="lead">
+      使用 sglang 官方 <code class="mono">bench_serving</code> 工具，<code class="mono">--dataset-name random-ids</code>
+      直接生成随机token id（绕开需联网下载语料的 <code class="mono">random</code> 数据集），对两套服务发起完全相同的负载：
+      输入长度 <b>1024 tokens</b>，输出长度 <b>256 tokens</b>，并发梯度 <b>1 / 4 / 8 / 16</b>，每档 <b>40个请求</b>，
+      随机种子固定为 42 以保证两组测试的输入完全一致。
+    </p>
+  </section>
+
+  <section id="charts">
+    <h2>三、性能对比图表</h2>
+    <div class="legend">
+      <span class="item"><span class="swatch" style="background:var(--series-1)"></span>PD分离（4卡）</span>
+      <span class="item"><span class="swatch" style="background:var(--series-2)"></span>单实例（2卡）</span>
+    </div>
+    <div class="charts-grid">
+<div class="chart-card">
+      <h3>输出吞吐<span class="unit">（tok/s）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>250</span></div><div class="tick" style="bottom:200.0px"><span>500</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:14px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 输出吞吐: 35.3 tok/s"><span class="bar-value">35.3</span></div><div class="bar" style="height:16px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 输出吞吐: 40.1 tok/s"><span class="bar-value">40.1</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:55px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 输出吞吐: 136.4 tok/s"><span class="bar-value">136.4</span></div><div class="bar" style="height:56px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 输出吞吐: 139.0 tok/s"><span class="bar-value">139.0</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:102px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 输出吞吐: 255.7 tok/s"><span class="bar-value">255.7</span></div><div class="bar" style="height:100px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 输出吞吐: 249.5 tok/s"><span class="bar-value">249.5</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:162px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 输出吞吐: 405.0 tok/s"><span class="bar-value">405.0</span></div><div class="bar" style="height:148px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 输出吞吐: 370.1 tok/s"><span class="bar-value">370.1</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>首Token延迟(TTFT)均值<span class="unit">（ms）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>1,000</span></div><div class="tick" style="bottom:200.0px"><span>2,000</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:51px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 首Token延迟(TTFT)均值: 513 ms"><span class="bar-value">513</span></div><div class="bar" style="height:20px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 首Token延迟(TTFT)均值: 197 ms"><span class="bar-value">197</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:52px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 首Token延迟(TTFT)均值: 517 ms"><span class="bar-value">517</span></div><div class="bar" style="height:55px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 首Token延迟(TTFT)均值: 548 ms"><span class="bar-value">548</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:52px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 首Token延迟(TTFT)均值: 523 ms"><span class="bar-value">523</span></div><div class="bar" style="height:85px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 首Token延迟(TTFT)均值: 850 ms"><span class="bar-value">850</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:106px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 首Token延迟(TTFT)均值: 1,057 ms"><span class="bar-value">1,057</span></div><div class="bar" style="height:169px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 首Token延迟(TTFT)均值: 1,686 ms"><span class="bar-value">1,686</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>首Token延迟(TTFT) P99<span class="unit">（ms）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>6,000</span></div><div class="tick" style="bottom:200.0px"><span>12,000</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:58px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 首Token延迟(TTFT) P99: 3,460 ms"><span class="bar-value">3,460</span></div><div class="bar" style="height:9px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 首Token延迟(TTFT) P99: 516 ms"><span class="bar-value">516</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:26px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 首Token延迟(TTFT) P99: 1,532 ms"><span class="bar-value">1,532</span></div><div class="bar" style="height:14px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 首Token延迟(TTFT) P99: 832 ms"><span class="bar-value">832</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:25px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 首Token延迟(TTFT) P99: 1,512 ms"><span class="bar-value">1,512</span></div><div class="bar" style="height:23px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 首Token延迟(TTFT) P99: 1,388 ms"><span class="bar-value">1,388</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:44px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 首Token延迟(TTFT) P99: 2,664 ms"><span class="bar-value">2,664</span></div><div class="bar" style="height:162px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 首Token延迟(TTFT) P99: 9,706 ms"><span class="bar-value">9,706</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>单Token解码延迟(TPOT)均值<span class="unit">（ms）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>20</span></div><div class="tick" style="bottom:200.0px"><span>40</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:132px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 单Token解码延迟(TPOT)均值: 26.4 ms"><span class="bar-value">26.4</span></div><div class="bar" style="height:121px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 单Token解码延迟(TPOT)均值: 24.3 ms"><span class="bar-value">24.3</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:137px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 单Token解码延迟(TPOT)均值: 27.3 ms"><span class="bar-value">27.3</span></div><div class="bar" style="height:134px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 单Token解码延迟(TPOT)均值: 26.7 ms"><span class="bar-value">26.7</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:144px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 单Token解码延迟(TPOT)均值: 28.8 ms"><span class="bar-value">28.8</span></div><div class="bar" style="height:144px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 单Token解码延迟(TPOT)均值: 28.8 ms"><span class="bar-value">28.8</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:148px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 单Token解码延迟(TPOT)均值: 29.7 ms"><span class="bar-value">29.7</span></div><div class="bar" style="height:159px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 单Token解码延迟(TPOT)均值: 31.7 ms"><span class="bar-value">31.7</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>端到端延迟 P99<span class="unit">（ms）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>12,500</span></div><div class="tick" style="bottom:200.0px"><span>25,000</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:81px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 端到端延迟 P99: 10,182 ms"><span class="bar-value">10,182</span></div><div class="bar" style="height:54px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 端到端延迟 P99: 6,711 ms"><span class="bar-value">6,711</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:66px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 端到端延迟 P99: 8,256 ms"><span class="bar-value">8,256</span></div><div class="bar" style="height:59px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 端到端延迟 P99: 7,423 ms"><span class="bar-value">7,423</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:72px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 端到端延迟 P99: 8,944 ms"><span class="bar-value">8,944</span></div><div class="bar" style="height:66px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 端到端延迟 P99: 8,286 ms"><span class="bar-value">8,286</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:84px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 端到端延迟 P99: 10,531 ms"><span class="bar-value">10,531</span></div><div class="bar" style="height:150px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 端到端延迟 P99: 18,731 ms"><span class="bar-value">18,731</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>请求吞吐<span class="unit">（req/s）</span></h3>
+      <div class="chart-area" style="height:200px">
+        <div class="ticks"><div class="tick" style="bottom:0.0px"><span>0</span></div><div class="tick" style="bottom:100.0px"><span>1</span></div><div class="tick" style="bottom:200.0px"><span>2</span></div></div>
+        <div class="bars"><div class="bar-group"><div class="bar" style="height:14px;background:var(--series-1)" title="PD分离（4卡） · 并发1 · 请求吞吐: 0.14 req/s"><span class="bar-value">0.14</span></div><div class="bar" style="height:16px;background:var(--series-2)" title="单实例（2卡） · 并发1 · 请求吞吐: 0.16 req/s"><span class="bar-value">0.16</span></div><div class="bar-axis-label">并发 1</div></div><div class="bar-group"><div class="bar" style="height:53px;background:var(--series-1)" title="PD分离（4卡） · 并发4 · 请求吞吐: 0.53 req/s"><span class="bar-value">0.53</span></div><div class="bar" style="height:54px;background:var(--series-2)" title="单实例（2卡） · 并发4 · 请求吞吐: 0.54 req/s"><span class="bar-value">0.54</span></div><div class="bar-axis-label">并发 4</div></div><div class="bar-group"><div class="bar" style="height:100px;background:var(--series-1)" title="PD分离（4卡） · 并发8 · 请求吞吐: 1.00 req/s"><span class="bar-value">1.00</span></div><div class="bar" style="height:97px;background:var(--series-2)" title="单实例（2卡） · 并发8 · 请求吞吐: 0.97 req/s"><span class="bar-value">0.97</span></div><div class="bar-axis-label">并发 8</div></div><div class="bar-group"><div class="bar" style="height:158px;background:var(--series-1)" title="PD分离（4卡） · 并发16 · 请求吞吐: 1.58 req/s"><span class="bar-value">1.58</span></div><div class="bar" style="height:145px;background:var(--series-2)" title="单实例（2卡） · 并发16 · 请求吞吐: 1.45 req/s"><span class="bar-value">1.45</span></div><div class="bar-axis-label">并发 16</div></div></div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section id="table">
+    <h2>四、完整数据</h2>
+<table class="data-table">
+  <thead>
+    <tr><th>并发</th><th>方案</th><th>请求吞吐(req/s)</th><th>输出吞吐(tok/s)</th><th>输入吞吐(tok/s)</th><th>TTFT均值(ms)</th><th>TTFT中位(ms)</th><th>TTFT P99(ms)</th><th>TPOT均值(ms)</th><th>TPOT P99(ms)</th><th>端到端均值(ms)</th><th>端到端P99(ms)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td><span class="dot" style="background:var(--series-1)"></span>PD分离（4卡）</td><td>0.14</td><td>35.3</td><td>141.2</td><td>513</td><td>460</td><td>3,460</td><td>26.4</td><td>26.7</td><td>7,250</td><td>10,182</td></tr><tr><td>1</td><td><span class="dot" style="background:var(--series-2)"></span>单实例（2卡）</td><td>0.16</td><td>40.1</td><td>160.2</td><td>197</td><td>178</td><td>516</td><td>24.3</td><td>24.3</td><td>6,390</td><td>6,711</td></tr><tr><td>4</td><td><span class="dot" style="background:var(--series-1)"></span>PD分离（4卡）</td><td>0.53</td><td>136.4</td><td>545.8</td><td>517</td><td>394</td><td>1,532</td><td>27.3</td><td>28.0</td><td>7,478</td><td>8,256</td></tr><tr><td>4</td><td><span class="dot" style="background:var(--series-2)"></span>单实例（2卡）</td><td>0.54</td><td>139.0</td><td>555.9</td><td>548</td><td>541</td><td>832</td><td>26.7</td><td>28.4</td><td>7,364</td><td>7,423</td></tr><tr><td>8</td><td><span class="dot" style="background:var(--series-1)"></span>PD分离（4卡）</td><td>1.00</td><td>255.7</td><td>1,022.7</td><td>523</td><td>348</td><td>1,512</td><td>28.8</td><td>29.2</td><td>7,866</td><td>8,944</td></tr><tr><td>8</td><td><span class="dot" style="background:var(--series-2)"></span>单实例（2卡）</td><td>0.97</td><td>249.5</td><td>998.0</td><td>850</td><td>989</td><td>1,388</td><td>28.8</td><td>31.8</td><td>8,200</td><td>8,286</td></tr><tr><td>16</td><td><span class="dot" style="background:var(--series-1)"></span>PD分离（4卡）</td><td>1.58</td><td>405.0</td><td>1,620.2</td><td>1,057</td><td>935</td><td>2,664</td><td>29.7</td><td>30.9</td><td>8,622</td><td>10,531</td></tr><tr><td>16</td><td><span class="dot" style="background:var(--series-2)"></span>单实例（2卡）</td><td>1.45</td><td>370.1</td><td>1,480.3</td><td>1,686</td><td>1,246</td><td>9,706</td><td>31.7</td><td>36.9</td><td>9,770</td><td>18,731</td></tr>
+  </tbody>
+</table>
+  </section>
+
+  <section id="findings">
+    <h2>五、结论</h2>
+    <div class="findings">
+      <div class="finding highlight">
+        <b>低并发（1）：2卡单实例更快。</b> TTFT均值 197ms vs PD的513ms，P99更是516ms vs 3,460ms——PD分离在低负载下的KV跨卡传输与prefill/decode调度握手开销占了大头，此时用一半GPU的单实例反而体验更好。
+      </div>
+      <div class="finding">
+        <b>中并发（4–8）：两者打平。</b> 输出吞吐几乎相同（136 vs 139 tok/s @ 并发4；256 vs 250 tok/s @ 并发8），2卡单实例用一半资源追平了4卡PD分离的吞吐。
+      </div>
+      <div class="finding">
+        <b>高并发（16）：PD分离反超，且更稳定。</b> 吞吐 405 vs 370 tok/s；更关键的是尾延迟——2卡单实例的TTFT P99飙升到 <b>9,706ms</b>（端到端P99达18.7秒），
+        原因是其 <code class="mono">max_running_requests</code> 协商结果仅15，16并发已顶到硬上限开始排队；而PD分离的prefill(16)/decode(48)解耦让decode端仍有余量，尾延迟增长更平缓（2,664ms）。
+      </div>
+      <div class="finding">
+        <b>TPOT（单token解码延迟）在所有并发下两者基本一致</b>（24–32ms区间），说明解码阶段的每token算力开销与部署形态无关，差异主要来自调度排队和KV传输环节。
+      </div>
+      <div class="finding">
+        <b>结论：</b> 若线上负载长期处于中低并发（≤8），2卡单实例部署性价比更高——资源减半、延迟更低。
+        若需要支撑更高并发（≥16）且对尾延迟敏感，PD分离用多花的2张卡换来了更高的并发上限和更平滑的尾延迟，是更稳妥的选择。
+      </div>
+    </div>
+  </section>
+
+  <footer class="report-footer">
+    生成方式：<code class="mono">bench_compare_27b_pd_vs_2gpu.sh</code>（本目录）驱动 <code class="mono">sglang.bench_serving</code>，
+    原始数据见 <code class="mono">bench_results/*.json</code>。部署脚本：<code class="mono">deploy_qwen3.8_pd.sh</code>（方案A）、
+    <code class="mono">deploy_qwen3.8_27b_8gpus.sh</code>（方案B）。
+  </footer>
+
+</div>
+</body>
+</html>
